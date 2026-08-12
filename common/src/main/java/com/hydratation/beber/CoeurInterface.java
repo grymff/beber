@@ -148,7 +148,7 @@ public class CoeurInterface extends Form {
 
         Label texteCoucou = new Label("coucou jennifer");
         texteCoucou.getAllStyles().setFgColor(0x8A2BE2);
-        texteCoucou.getAllStyles().setFont(Font.createTrueTypeFont(Font.NAME_NATIVE_BOLD, Font.NAME_NATIVE_BOLD).derive(48, Font.STYLE_BOLD));
+        texteCoucou.getAllStyles().setFont(Font.getDefaultFont().derive(48, Font.STYLE_BOLD));
         texteCoucou.setAlignment(Component.CENTER);
 
         pleinEcran.add(texteCoucou);
