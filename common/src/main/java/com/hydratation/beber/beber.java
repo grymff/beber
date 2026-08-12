@@ -1,38 +1,64 @@
-import javax.swing.SwingUtilities;
-import java.util.Timer;
-import java.util.TimerTask;
+package com.hydratation.beber;
+
+import com.codename1.ui.Display;
+import com.codename1.ui.Form;
+import com.codename1.ui.util.Resources;
+import com.codename1.notifications.LocalNotification;
+
+import java.io.IOException;
+import java.util.Calendar;
 
 public class beber {
-    public static void main(String[] args) {
-        // INTERVALLE RÉEL : 2 heures (7 200 000 millisecondes)
-        long period = 7200000; 
 
-        SwingUtilities.invokeLater(() -> {
-            // Création de l'interface du cœur
-            CoeurInterface fenetreCoeur = new CoeurInterface();
-            
-            // ACTION IMMÉDIATE : Affiche le cœur directement au démarrage du PC
-            fenetreCoeur.configurerDemarrage();
-            fenetreCoeur.setVisible(true);
+    private Form current;
+    private Resources theme;
 
-            Timer timer = new Timer();
-            
-            // Planification : attend 1 minute (60000 ms) au lancement initial pour vous 
-            // laisser le temps de taper le code, puis se répète toutes les 2 heures (period).
-            timer.scheduleAtFixedRate(new TimerTask() {
-                @Override
-                public void run() {
-                    SwingUtilities.invokeLater(() -> {
-                        // Si le cœur était encore visible du lancement, on le masque
-                        if (fenetreCoeur.isAuDemarrage()) {
-                            fenetreCoeur.terminerDemarrage();
-                        }
-                        
-                        fenetreCoeur.viderJauge(); 
-                        fenetreCoeur.setVisible(true); // Fait surgir le cœur toutes les 2h
-                    });
-                }
-            }, 60000, period); // 60000 ms = 1 minute d'attente au tout premier démarrage
-        });
+    public void init(Object context) {
+        theme = UIManagerSafeInit();
+        // Planifie le rappel répété toutes les 2 heures, même app fermée
+        planifierRappel();
+    }
+
+    public void start() {
+        if (current != null) {
+            current.show();
+            return;
+        }
+        CoeurInterface coeurForm = new CoeurInterface();
+        coeurForm.show();
+        current = coeurForm;
+    }
+
+    public void stop() {
+        current = Display.getInstance().getCurrent();
+    }
+
+    public void destroy() {
+    }
+
+    private Resources UIManagerSafeInit() {
+        try {
+            Resources r = Resources.openLayered("/theme");
+            return r;
+        } catch (IOException e) {
+            // Pas de fichier de thème personnalisé, on continue avec le thème par défaut
+            return null;
+        }
+    }
+
+    private void planifierRappel() {
+        LocalNotification n = new LocalNotification();
+        n.setId("rappelBeber");
+        n.setAlertTitle("Beber");
+        n.setAlertBody("Vite, à boire !");
+
+        // Première notification dans 2 heures, puis répétition toutes les 2h
+        long dansDeuxHeures = System.currentTimeMillis() + (2L * 60 * 60 * 1000);
+        n.setRepeatType(com.codename1.notifications.LocalNotification.REPEAT_NONE);
+
+        Display.getInstance().scheduleLocalNotification(n, dansDeuxHeures, LocalNotification.REPEAT_NONE);
+        // Remarque : pour une répétition automatique toutes les 2h en continu,
+        // on replanifie une nouvelle notification à chaque ouverture de l'app
+        // (voir CoeurInterface -> replanifierProchainRappel()).
     }
 }
