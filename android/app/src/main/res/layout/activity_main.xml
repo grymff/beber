@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://android.com"
+    android:layout_width="match_match"
+    android:layout_height="match_parent"
+    android:background="#000000">
+
+    <!-- COUCHE 1 : L'INTERFACE DE L'ALARME DU COEUR -->
+    <LinearLayout
+        android:id="@+id/layoutPrincipal"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:visibility="visible">
+
+        <com.hydratation.beber.MonCoeurView
+            android:id="@+id/coeurView"
+            android:layout_width="320dp"
+            android:layout_height="320dp" />
+
+        <TextView
+            android:id="@+id/texteLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginTop="20dp"/>
+
+        <Button
+            android:id="@+id/boutonBoire"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="J'AI BU !"
+            android:layout_marginTop="15dp"/>
+
+        <Button
+            android:id="@+id/boutonPlusTard"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Plus tard"
+            style="?android:attr/borderlessButtonStyle"
+            android:textColor="#B4B4B4"
+            android:textSize="12sp"/>
+    </LinearLayout>
+
+    <!-- COUCHE 2 : LA COUCHE SURPRISE PLEIN ÉCRAN JENNIFER (CACHÉE PAR DÉFAUT) -->
+    <RelativeLayout
+        android:id="@+id/layoutJennifer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#000000"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="coucou jennifer"
+            android:textColor="#8A2BE2"
+            android:textSize="48sp"
+            android:textStyle="bold"
+            android:layout_centerInParent="true"/>
+    </RelativeLayout>
+</RelativeLayout>
