@@ -40,7 +40,7 @@ public class CoeurInterface extends Form {
         texteLabel = new Label("VITE, À BOIRE !");
         texteLabel.getAllStyles().setFgColor(0xFFFFFF);
         texteLabel.getAllStyles().setBgTransparency(0);
-        texteLabel.getAllStyles().setFont(Font.createTrueTypeFont(Font.NAME_NATIVE_BOLD, Font.NAME_NATIVE_BOLD).derive(18, Font.STYLE_BOLD));
+        texteLabel.getAllStyles().setFont(Font.getDefaultFont().derive(18, Font.STYLE_BOLD));
 
         Button boutonBoire = new Button("J'AI BU !");
         styleBouton(boutonBoire, 0xFFFFFF, 0x333333);
@@ -77,13 +77,14 @@ public class CoeurInterface extends Form {
         s.setFgColor(fgColor);
         s.setBgColor(bgColor);
         s.setBgTransparency(255);
-        s.setFont(Font.createTrueTypeFont(Font.NAME_NATIVE_BOLD, Font.NAME_NATIVE_BOLD).derive(14, Font.STYLE_PLAIN));
+        s.setFont(Font.getDefaultFont().derive(14, Font.STYLE_PLAIN));
     }
 
     private void demarrerAnimationYeux() {
-        com.codename1.ui.util.UITimer.timer(() -> {
+        com.codename1.ui.util.UITimer animationTimer = new com.codename1.ui.util.UITimer(() -> {
             coeurComponent.avancerAnimation();
-        }, 120, true, this);
+        });
+        animationTimer.schedule(120, true, this);
     }
 
     public void configurerDemarrage() {
@@ -120,20 +121,20 @@ public class CoeurInterface extends Form {
     }
 
     private void activerCheatMenu() {
-        String choix = Dialog.show(
+        com.codename1.ui.Command bleu = new com.codename1.ui.Command("Forcer le Coeur Bleu (100%)");
+        com.codename1.ui.Command rouge = new com.codename1.ui.Command("Forcer le Coeur Rouge (0%)");
+        com.codename1.ui.Command annuler = new com.codename1.ui.Command("Annuler");
+
+        com.codename1.ui.Command choix = Dialog.show(
                 "Beber - Cheat Menu",
                 "Code Secret Réussi ! Que voulez-vous faire ?\n(créé par GRYMFF, août 2026, pour Jennifer)",
-                new String[]{
-                        "Forcer le Coeur Bleu (100%)",
-                        "Forcer le Coeur Rouge (0%)",
-                        "Annuler"
-                }, null);
+                bleu, rouge, annuler);
 
-        if ("Forcer le Coeur Bleu (100%)".equals(choix)) {
+        if (choix == bleu) {
             this.auDemarrage = false;
             this.scoreHydratation = 100;
             mettreAJour();
-        } else if ("Forcer le Coeur Rouge (0%)".equals(choix)) {
+        } else if (choix == rouge) {
             this.auDemarrage = false;
             this.scoreHydratation = 0;
             mettreAJour();
