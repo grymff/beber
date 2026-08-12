@@ -21,20 +21,24 @@ jobs:
         run: brew install maven
 
       - name: Générer le projet Xcode (ios_source)
-        run: mvn install -Dcodename1.platform=ios -Dcodename1.buildTarget=ios-source
+        run: mvn package -Dcodename1.platform=ios -Dcodename1.buildTarget=ios-source
 
-      - name: Vérifier que le projet Xcode existe
+      - name: Localiser le projet Xcode généré
+        id: locate
         run: |
-          if [ ! -d "ios/generated-sources" ]; then
-            echo "Le dossier ios/generated-sources n'existe pas — le build a échoué silencieusement."
+          PROJECT_DIR=$(find ios/target -maxdepth 1 -type d -name "*-ios-source" | head -n 1)
+          if [ -z "$PROJECT_DIR" ]; then
+            echo "Aucun projet Xcode trouvé sous ios/target"
             find . -maxdepth 3
             exit 1
           fi
-          ls -la ios/generated-sources
+          echo "project_dir=$PROJECT_DIR" >> "$GITHUB_OUTPUT"
+          echo "Projet trouvé : $PROJECT_DIR"
+          ls -la "$PROJECT_DIR"
 
       - name: Installer les CocoaPods si besoin
         run: |
-          cd ios/generated-sources
+          cd "${{ steps.locate.outputs.project_dir }}"
           if [ -f Podfile ]; then
             pod install
           fi
@@ -42,7 +46,7 @@ jobs:
 
       - name: Compiler avec Xcode (sans signature)
         run: |
-          cd ios/generated-sources
+          cd "${{ steps.locate.outputs.project_dir }}"
           WORKSPACE=$(find . -maxdepth 1 -name "*.xcworkspace" | head -n 1)
           if [ -n "$WORKSPACE" ]; then
             FLAG="-workspace"
@@ -63,7 +67,7 @@ jobs:
 
       - name: Empaqueter en .ipa (non signé)
         run: |
-          cd ios/generated-sources
+          cd "${{ steps.locate.outputs.project_dir }}"
           APP_PATH=$(find build -name "*.app" -path "*Release-iphoneos*" | head -n 1)
           mkdir -p Payload
           cp -r "$APP_PATH" Payload/
