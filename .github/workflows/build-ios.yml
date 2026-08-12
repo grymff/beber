@@ -17,11 +17,11 @@ jobs:
           distribution: 'zulu'
           java-version: '8'
 
-      - name: Rendre les scripts exécutables
-        run: chmod +x build.sh mvnw
+      - name: Installer Maven
+        run: brew install maven
 
       - name: Générer le projet Xcode (ios_source)
-        run: ./build.sh ios_source
+        run: mvn install -Dcodename1.platform=ios -Dcodename1.buildTarget=ios-source
 
       - name: Vérifier que le projet Xcode existe
         run: |
