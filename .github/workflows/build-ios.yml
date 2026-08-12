@@ -25,14 +25,24 @@ jobs:
         id: locate
         run: |
           WORKSPACE=$(find . -name "*.xcworkspace" -not -path "*/Pods/*" | head -n 1)
-          if [ -z "$WORKSPACE" ]; then
-            echo "Aucun .xcworkspace trouvé — vérifie que buildTarget=ios-source dans le pom.xml"
-            find . -iname "*ios*" -maxdepth 4
-            exit 1
+          if [ -n "$WORKSPACE" ]; then
+            echo "type=workspace" >> "$GITHUB_OUTPUT"
+            echo "target=$WORKSPACE" >> "$GITHUB_OUTPUT"
+            echo "project_dir=$(dirname "$WORKSPACE")" >> "$GITHUB_OUTPUT"
+            echo "Trouvé un workspace : $WORKSPACE"
+            exit 0
           fi
-          echo "workspace=$WORKSPACE" >> "$GITHUB_OUTPUT"
-          echo "project_dir=$(dirname "$WORKSPACE")" >> "$GITHUB_OUTPUT"
-          echo "Projet Xcode trouvé : $WORKSPACE"
+          PROJECT=$(find . -name "*.xcodeproj" -not -path "*/Pods/*" | head -n 1)
+          if [ -n "$PROJECT" ]; then
+            echo "type=project" >> "$GITHUB_OUTPUT"
+            echo "target=$PROJECT" >> "$GITHUB_OUTPUT"
+            echo "project_dir=$(dirname "$PROJECT")" >> "$GITHUB_OUTPUT"
+            echo "Trouvé un projet Xcode : $PROJECT"
+            exit 0
+          fi
+          echo "Aucun projet Xcode trouvé — voici l'arborescence complète pour debug :"
+          find . -maxdepth 6 -newer pom.xml
+          exit 1
 
       - name: Installer les CocoaPods si besoin
         run: |
@@ -45,9 +55,15 @@ jobs:
       - name: Compiler avec Xcode (sans signature)
         run: |
           cd "${{ steps.locate.outputs.project_dir }}"
-          SCHEME=$(xcodebuild -workspace "$(basename "${{ steps.locate.outputs.workspace }}")" -list | awk '/Schemes:/{getline; print; exit}' | xargs)
+          TARGET_NAME=$(basename "${{ steps.locate.outputs.target }}")
+          if [ "${{ steps.locate.outputs.type }}" = "workspace" ]; then
+            FLAG="-workspace"
+          else
+            FLAG="-project"
+          fi
+          SCHEME=$(xcodebuild $FLAG "$TARGET_NAME" -list | awk '/Schemes:/{getline; print; exit}' | xargs)
           echo "Scheme utilisé : $SCHEME"
-          xcodebuild -workspace "$(basename "${{ steps.locate.outputs.workspace }}")" \
+          xcodebuild $FLAG "$TARGET_NAME" \
             -scheme "$SCHEME" \
             -sdk iphoneos -configuration Release \
             CODE_SIGNING_ALLOWED=NO \
