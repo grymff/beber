@@ -17,36 +17,24 @@ jobs:
           distribution: 'zulu'
           java-version: '8'
 
-      - name: Générer le projet Xcode (ios-source)
-        run: |
-          mvn package
+      - name: Rendre les scripts exécutables
+        run: chmod +x build.sh mvnw
 
-      - name: Localiser le projet Xcode généré
-        id: locate
+      - name: Générer le projet Xcode (ios_source)
+        run: ./build.sh ios_source
+
+      - name: Vérifier que le projet Xcode existe
         run: |
-          WORKSPACE=$(find . -name "*.xcworkspace" -not -path "*/Pods/*" | head -n 1)
-          if [ -n "$WORKSPACE" ]; then
-            echo "type=workspace" >> "$GITHUB_OUTPUT"
-            echo "target=$WORKSPACE" >> "$GITHUB_OUTPUT"
-            echo "project_dir=$(dirname "$WORKSPACE")" >> "$GITHUB_OUTPUT"
-            echo "Trouvé un workspace : $WORKSPACE"
-            exit 0
+          if [ ! -d "ios/generated-sources" ]; then
+            echo "Le dossier ios/generated-sources n'existe pas — le build a échoué silencieusement."
+            find . -maxdepth 3
+            exit 1
           fi
-          PROJECT=$(find . -name "*.xcodeproj" -not -path "*/Pods/*" | head -n 1)
-          if [ -n "$PROJECT" ]; then
-            echo "type=project" >> "$GITHUB_OUTPUT"
-            echo "target=$PROJECT" >> "$GITHUB_OUTPUT"
-            echo "project_dir=$(dirname "$PROJECT")" >> "$GITHUB_OUTPUT"
-            echo "Trouvé un projet Xcode : $PROJECT"
-            exit 0
-          fi
-          echo "Aucun projet Xcode trouvé — voici l'arborescence complète pour debug :"
-          find . -maxdepth 6 -newer pom.xml
-          exit 1
+          ls -la ios/generated-sources
 
       - name: Installer les CocoaPods si besoin
         run: |
-          cd "${{ steps.locate.outputs.project_dir }}"
+          cd ios/generated-sources
           if [ -f Podfile ]; then
             pod install
           fi
@@ -54,16 +42,19 @@ jobs:
 
       - name: Compiler avec Xcode (sans signature)
         run: |
-          cd "${{ steps.locate.outputs.project_dir }}"
-          TARGET_NAME=$(basename "${{ steps.locate.outputs.target }}")
-          if [ "${{ steps.locate.outputs.type }}" = "workspace" ]; then
+          cd ios/generated-sources
+          WORKSPACE=$(find . -maxdepth 1 -name "*.xcworkspace" | head -n 1)
+          if [ -n "$WORKSPACE" ]; then
             FLAG="-workspace"
+            TARGET="$(basename "$WORKSPACE")"
           else
+            PROJECT=$(find . -maxdepth 1 -name "*.xcodeproj" | head -n 1)
             FLAG="-project"
+            TARGET="$(basename "$PROJECT")"
           fi
-          SCHEME=$(xcodebuild $FLAG "$TARGET_NAME" -list | awk '/Schemes:/{getline; print; exit}' | xargs)
-          echo "Scheme utilisé : $SCHEME"
-          xcodebuild $FLAG "$TARGET_NAME" \
+          SCHEME=$(xcodebuild $FLAG "$TARGET" -list | awk '/Schemes:/{getline; print; exit}' | xargs)
+          echo "Utilise $FLAG $TARGET avec le scheme $SCHEME"
+          xcodebuild $FLAG "$TARGET" \
             -scheme "$SCHEME" \
             -sdk iphoneos -configuration Release \
             CODE_SIGNING_ALLOWED=NO \
@@ -72,7 +63,7 @@ jobs:
 
       - name: Empaqueter en .ipa (non signé)
         run: |
-          cd "${{ steps.locate.outputs.project_dir }}"
+          cd ios/generated-sources
           APP_PATH=$(find build -name "*.app" -path "*Release-iphoneos*" | head -n 1)
           mkdir -p Payload
           cp -r "$APP_PATH" Payload/
