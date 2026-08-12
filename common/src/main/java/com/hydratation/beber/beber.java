@@ -52,9 +52,8 @@ public class beber {
         n.setAlertTitle("Beber");
         n.setAlertBody("Vite, à boire !");
 
-        // Première notification dans 2 heures, puis répétition toutes les 2h
+        // Première notification dans 2 heures
         long dansDeuxHeures = System.currentTimeMillis() + (2L * 60 * 60 * 1000);
-        n.setRepeatType(com.codename1.notifications.LocalNotification.REPEAT_NONE);
 
         Display.getInstance().scheduleLocalNotification(n, dansDeuxHeures, LocalNotification.REPEAT_NONE);
         // Remarque : pour une répétition automatique toutes les 2h en continu,
